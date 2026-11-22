@@ -23,5 +23,31 @@ class ShoppingViewModel : ViewModel() {
         )
         items = items + newItem
     }
-    // toggle, edit and delete functions come next
+
+    fun deleteItem(id: Int) {
+        val newList = mutableListOf<ShoppingItem>()
+
+        for (item in items) {
+            if (item.id != id) {
+                newList.add(item)
+            }
+        }
+
+        items = newList
+    }
+
+    fun toggleBought(id: Int) {
+        val newList = mutableListOf<ShoppingItem>()
+
+        for (item in items) {
+            if (item.id == id) {
+                val changedItem = item.copy(isBought = !item.isBought)
+                newList.add(changedItem)
+            } else {
+                newList.add(item)
+            }
+        }
+
+        items = newList
+    }
 }
