@@ -50,4 +50,22 @@ class ShoppingViewModel : ViewModel() {
 
         items = newList
     }
+
+    fun editItem(id: Int, newName: String, newSection: String) {
+        val trimmedName = newName.trim()
+        if (trimmedName.isEmpty()) return
+
+        val newList = mutableListOf<ShoppingItem>()
+
+        for (item in items) {
+            if (item.id == id) {
+                val changedItem = item.copy(name = trimmedName, section = newSection)
+                newList.add(changedItem)
+            } else {
+                newList.add(item)
+            }
+        }
+
+        items = newList
+    }
 }
