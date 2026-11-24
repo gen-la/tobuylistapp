@@ -22,6 +22,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.style.TextDecoration
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,6 +39,14 @@ fun ShoppingListScreen(viewModel: ShoppingViewModel = viewModel()) {
     ) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding)) {
             AddItemRow(onAdd = { name, section -> viewModel.addItem(name, section) })
+            LazyColumn(modifier = Modifier.weight(1f)) {
+                items(viewModel.items, key = { it.id }) { item ->
+                    ShoppingItemRow(
+                        item = item,
+                        onToggle = { viewModel.toggleBought(item.id) }
+                    )
+                }
+            }
         }
     }
 }
@@ -99,6 +113,33 @@ fun AddItemRow(onAdd: (String, String) -> Unit) {
             ) {
                 Text("Add")
             }
+        }
+    }
+}
+
+@Composable
+fun ShoppingItemRow(item: ShoppingItem, onToggle: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Checkbox(
+            checked = item.isBought,
+            onCheckedChange = { onToggle() }
+        )
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = item.name,
+                style = MaterialTheme.typography.bodyLarge,
+                textDecoration = if (item.isBought) TextDecoration.LineThrough else TextDecoration.None
+            )
+            Text(
+                text = item.section,
+                style = MaterialTheme.typography.bodySmall
+            )
         }
     }
 }
