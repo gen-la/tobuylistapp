@@ -35,6 +35,9 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.TextButton
+import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.material3.TopAppBarDefaults
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,19 +45,37 @@ fun ShoppingListScreen(viewModel: ShoppingViewModel = viewModel()) {
     var itemBeingEdited by remember { mutableStateOf<ShoppingItem?>(null) }
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("Shopping List") })
+            TopAppBar(
+                title = { Text("Shopping List") },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            )
         }
     ) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding)) {
+            var boughtCount = 0
+            for (item in viewModel.items) {
+                if (item.isBought) {
+                    boughtCount++
+                }
+            }
             AddItemRow(onAdd = { name, section -> viewModel.addItem(name, section) })
-            LazyColumn(modifier = Modifier.weight(1f)) {
-                items(viewModel.items, key = { it.id }) { item ->
-                    ShoppingItemRow(
-                        item = item,
-                        onToggle = { viewModel.toggleBought(item.id) },
-                        onEdit = { itemBeingEdited = item },
-                        onDelete = { viewModel.deleteItem(item.id) }
-                    )
+            if (viewModel.items.isEmpty()) {
+                EmptyListHelp(modifier = Modifier.weight(1f))
+            } else {
+                StatisticsRow(bought = boughtCount, total = viewModel.items.size)
+
+                LazyColumn(modifier = Modifier.weight(1f)) {
+                    items(viewModel.items, key = { it.id }) { item ->
+                        ShoppingItemRow(
+                            item = item,
+                            onToggle = { viewModel.toggleBought(item.id) },
+                            onEdit = { itemBeingEdited = item },
+                            onDelete = { viewModel.deleteItem(item.id) }
+                        )
+                    }
                 }
             }
             val editing = itemBeingEdited
@@ -72,7 +93,7 @@ fun ShoppingListScreen(viewModel: ShoppingViewModel = viewModel()) {
     }
 }
 
-val sections = listOf("Fruit & Veg", "Dairy", "Meat & Fish", "Bakery", "Frozen", "Drinks", "Other")
+val sections = listOf("Fruits & Veggies", "Dairy", "Meat & Fish", "Bakery & Sweets", "Frozen", "Drinks", "Other")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -242,4 +263,31 @@ fun EditItemDialog(
             }
         }
     )
+}
+
+@Composable
+fun StatisticsRow(bought: Int, total: Int) {
+    Text(
+        text = "$bought of $total items bought",
+        style = MaterialTheme.typography.titleMedium,
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+    )
+}
+
+@Composable
+fun EmptyListHelp(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(32.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = "Your shopping list is empty.\n\n" +
+                    "Type an item above, choose a section in the store and press Add.\n\n" +
+                    "Tick the box when you have bought it, use the pencil to edit it or the trash can to remove it.",
+            style = MaterialTheme.typography.bodyLarge,
+            textAlign = TextAlign.Center
+        )
+    }
 }
