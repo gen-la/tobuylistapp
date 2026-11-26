@@ -28,10 +28,18 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.TextButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ShoppingListScreen(viewModel: ShoppingViewModel = viewModel()) {
+    var itemBeingEdited by remember { mutableStateOf<ShoppingItem?>(null) }
     Scaffold(
         topBar = {
             TopAppBar(title = { Text("Shopping List") })
@@ -43,9 +51,22 @@ fun ShoppingListScreen(viewModel: ShoppingViewModel = viewModel()) {
                 items(viewModel.items, key = { it.id }) { item ->
                     ShoppingItemRow(
                         item = item,
-                        onToggle = { viewModel.toggleBought(item.id) }
+                        onToggle = { viewModel.toggleBought(item.id) },
+                        onEdit = { itemBeingEdited = item },
+                        onDelete = { viewModel.deleteItem(item.id) }
                     )
                 }
+            }
+            val editing = itemBeingEdited
+            if (editing != null) {
+                EditItemDialog(
+                    item = editing,
+                    onSave = { newName, newSection ->
+                        viewModel.editItem(editing.id, newName, newSection)
+                        itemBeingEdited = null
+                    },
+                    onCancel = { itemBeingEdited = null }
+                )
             }
         }
     }
@@ -118,7 +139,12 @@ fun AddItemRow(onAdd: (String, String) -> Unit) {
 }
 
 @Composable
-fun ShoppingItemRow(item: ShoppingItem, onToggle: () -> Unit) {
+fun ShoppingItemRow(
+    item: ShoppingItem,
+    onToggle: () -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -141,5 +167,79 @@ fun ShoppingItemRow(item: ShoppingItem, onToggle: () -> Unit) {
                 style = MaterialTheme.typography.bodySmall
             )
         }
+
+        IconButton(onClick = onEdit) {
+            Icon(Icons.Default.Edit, contentDescription = "Edit")
+        }
+        IconButton(onClick = onDelete) {
+            Icon(Icons.Default.Delete, contentDescription = "Delete")
+        }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EditItemDialog(
+    item: ShoppingItem,
+    onSave: (String, String) -> Unit,
+    onCancel: () -> Unit
+) {
+    var name by remember { mutableStateOf(item.name) }
+    var section by remember { mutableStateOf(item.section) }
+    var expanded by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onCancel,
+        title = { Text("Edit item") },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Item to buy") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                ExposedDropdownMenuBox(
+                    expanded = expanded,
+                    onExpandedChange = { expanded = !expanded },
+                    modifier = Modifier.padding(top = 8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = section,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Section") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                        modifier = Modifier.menuAnchor()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        for (option in sections) {
+                            DropdownMenuItem(
+                                text = { Text(option) },
+                                onClick = {
+                                    section = option
+                                    expanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onSave(name, section) }) {
+                Text("Save")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onCancel) {
+                Text("Cancel")
+            }
+        }
+    )
 }
